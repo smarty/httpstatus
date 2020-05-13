@@ -8,6 +8,7 @@ import (
 
 type configuration struct {
 	name                 string
+	friendlyName         string
 	startingState        string
 	healthyState         string
 	failingState         string
@@ -34,6 +35,9 @@ type option func(*configuration)
 
 func (singleton) Name(value string) option {
 	return func(this *configuration) { this.name = value }
+}
+func (singleton) FriendlyName(value string) option {
+	return func(this *configuration) { this.friendlyName = value }
 }
 func (singleton) StartingStateValue(value string) option {
 	return func(this *configuration) { this.startingState = value }
@@ -98,6 +102,7 @@ func (singleton) defaults(options ...option) []option {
 
 	return append([]option{
 		Options.Name(defaultName),
+		Options.FriendlyName(defaultName),
 		Options.StartingStateValue(defaultStartingState),
 		Options.HealthyStateValue(defaultHealthyState),
 		Options.FailingStateValue(defaultFailingState),
