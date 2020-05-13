@@ -104,12 +104,13 @@ func (this *defaultStatus) Failing(err error) {
 func (this *defaultStatus) Stopping() {
 	previousState := atomic.SwapUint32(&this.state, stateStopping)
 	this.Monitor.Stopping()
-	this.logger.Printf("[INFO] Health check for resource [%s] entering [stopping] state. Waiting [%s] before concluding.", this.resourceName, this.delay)
 
 	if previousState != stateHealthy {
+		this.logger.Printf("[INFO] Health check for resource [%s] entering [stopping] state. Skipping [%s] shutdown delay because state is unhealthy.", this.resourceName, this.delay)
 		return // already unhealthy, avoid shutdown delay
 	}
 
+	this.logger.Printf("[INFO] Health check for resource [%s] entering [stopping] state. Waiting [%s] before concluding.", this.resourceName, this.delay)
 	ctx, _ := context.WithTimeout(this.hardContext, this.delay)
 	<-ctx.Done()
 }
