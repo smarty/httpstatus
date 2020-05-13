@@ -72,7 +72,10 @@ func (this *StatusFixture) assertHTTP(state uint32, statusCode int, responseText
 }
 
 func (this *StatusFixture) TestWhenStatusHealthy_MarkAsHealthy() {
-	go func() { _ = this.handler.Close() }()
+	go func() {
+		time.Sleep(time.Millisecond)
+		_ = this.handler.Close()
+	}()
 
 	this.handler.Listen()
 
