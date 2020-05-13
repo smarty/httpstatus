@@ -94,7 +94,7 @@ func (this *defaultHandler) Failing(err error) {
 func (this *defaultHandler) Stopping() {
 	atomic.StoreUint32(&this.state, stateStopping)
 	this.Monitor.Stopping()
-	this.logger.Printf("[INFO] Stopping health check operations.")
+	this.logger.Printf("[INFO] Entering [stopping] state. Waiting [%s] before concluding.", this.delay)
 
 	ctx, _ := context.WithTimeout(this.hardContext, this.delay)
 	<-ctx.Done()
