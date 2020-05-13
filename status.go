@@ -10,6 +10,7 @@ import (
 
 type defaultStatus struct {
 	Monitor
+	name         string
 	startingText string
 	healthyText  string
 	failingText  string
@@ -30,6 +31,7 @@ func newHandler(config configuration) Handler {
 
 	return &defaultStatus{
 		Monitor:      config.monitor,
+		name:         config.name,
 		startingText: fmt.Sprintf("%s:%s", config.name, config.startingState),
 		healthyText:  fmt.Sprintf("%s:%s", config.name, config.healthyState),
 		failingText:  fmt.Sprintf("%s:%s", config.name, config.failingState),
@@ -81,7 +83,7 @@ func (this *defaultStatus) Healthy() {
 	}
 
 	this.Monitor.Healthy()
-	this.logger.Printf("[INFO] Health check passed.")
+	this.logger.Printf("[INFO] Health check [%s] passed.", this.name)
 }
 func (this *defaultStatus) Failing(err error) {
 	if atomic.SwapUint32(&this.state, stateFailing) == stateFailing {
@@ -89,12 +91,12 @@ func (this *defaultStatus) Failing(err error) {
 	}
 
 	this.Monitor.Failing(err)
-	this.logger.Printf("[WARN] Health check failing: [%s].", err)
+	this.logger.Printf("[WARN] Health check [%s] failing: [%s].", this.name, err)
 }
 func (this *defaultStatus) Stopping() {
 	atomic.StoreUint32(&this.state, stateStopping)
 	this.Monitor.Stopping()
-	this.logger.Printf("[INFO] Entering [stopping] state. Waiting [%s] before concluding.", this.delay)
+	this.logger.Printf("[INFO] Health check [%s] entering [stopping] state. Waiting [%s] before concluding.", this.name, this.delay)
 
 	ctx, _ := context.WithTimeout(this.hardContext, this.delay)
 	<-ctx.Done()
