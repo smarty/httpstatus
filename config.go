@@ -120,7 +120,7 @@ type nop struct{}
 func (nop) Printf(_ string, _ ...interface{}) {}
 func (nop) Println(_ ...interface{})          {}
 
-func (nop) Status(ctx context.Context) error { return ctx.Err() }
+func (nop) Status(_ context.Context) error { return nil }
 
 func (nop) Starting()       {}
 func (nop) Healthy()        {}

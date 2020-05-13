@@ -84,8 +84,7 @@ func (this *StatusFixture) TestWhenContextIsCancelled_ListenExists() {
 
 	this.handler.Listen()
 
-	this.So(this.statusContext, should.NotBeNil)
-	this.So(this.statusContext, should.NotEqual, context.Background())
+	this.So(this.statusContext, should.BeNil)
 	this.So(this.healthyCount, should.Equal, 0)
 	this.So(this.failingCount, should.Equal, 0)
 	this.So(this.stoppingCount, should.Equal, 1)
@@ -106,7 +105,7 @@ func (this *StatusFixture) TestWhenStatusCheckContextTimesOut_MarkAsFailing() {
 
 	this.handler.Listen()
 
-	this.So(this.statusCount, should.Equal, 3)
+	this.So(this.statusCount, should.Equal, 2)
 	this.So(this.failingCount, should.Equal, 1)
 	this.So(this.failingError, should.Resemble, context.DeadlineExceeded)
 }

@@ -62,7 +62,7 @@ func (this *defaultStatus) ServeHTTP(response http.ResponseWriter, _ *http.Reque
 func (this *defaultStatus) Listen() {
 	defer this.Stopping()
 
-	for {
+	for this.isAlive() {
 		ctx, _ := context.WithTimeout(this.softContext, this.timeout)
 		if err := this.healthCheck.Status(ctx); err == nil {
 			this.Healthy()
@@ -77,6 +77,14 @@ func (this *defaultStatus) Listen() {
 	}
 }
 
+func (this *defaultStatus) isAlive() bool {
+	select {
+	case <-this.softContext.Done():
+		return false
+	default:
+		return true
+	}
+}
 func (this *defaultStatus) Healthy() {
 	if atomic.SwapUint32(&this.state, stateHealthy) == stateHealthy {
 		return // state hasn't changed, previously healthy
