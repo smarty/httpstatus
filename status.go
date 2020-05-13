@@ -10,7 +10,7 @@ import (
 
 type defaultStatus struct {
 	Monitor
-	friendlyName string
+	resourceName string
 	startingText string
 	healthyText  string
 	failingText  string
@@ -31,11 +31,11 @@ func newHandler(config configuration) Handler {
 
 	return &defaultStatus{
 		Monitor:      config.monitor,
-		friendlyName: config.friendlyName,
-		startingText: fmt.Sprintf("%s:%s", config.name, config.startingState),
-		healthyText:  fmt.Sprintf("%s:%s", config.name, config.healthyState),
-		failingText:  fmt.Sprintf("%s:%s", config.name, config.failingState),
-		stoppingText: fmt.Sprintf("%s:%s", config.name, config.stoppingState),
+		resourceName: config.resourceName,
+		startingText: fmt.Sprintf("%s:%s", config.displayName, config.startingState),
+		healthyText:  fmt.Sprintf("%s:%s", config.displayName, config.healthyState),
+		failingText:  fmt.Sprintf("%s:%s", config.displayName, config.failingState),
+		stoppingText: fmt.Sprintf("%s:%s", config.displayName, config.stoppingState),
 		hardContext:  config.ctx,
 		softContext:  softContext,
 		shutdown:     softShutdown,
@@ -91,7 +91,7 @@ func (this *defaultStatus) Healthy() {
 	}
 
 	this.Monitor.Healthy()
-	this.logger.Printf("[INFO] Health check [%s] passed.", this.friendlyName)
+	this.logger.Printf("[INFO] Health check for resource [%s] passed.", this.resourceName)
 }
 func (this *defaultStatus) Failing(err error) {
 	if atomic.SwapUint32(&this.state, stateFailing) == stateFailing {
@@ -99,12 +99,12 @@ func (this *defaultStatus) Failing(err error) {
 	}
 
 	this.Monitor.Failing(err)
-	this.logger.Printf("[WARN] Health check [%s] failing: [%s].", this.friendlyName, err)
+	this.logger.Printf("[WARN] Health check for resource [%s] failing: [%s].", this.resourceName, err)
 }
 func (this *defaultStatus) Stopping() {
 	atomic.StoreUint32(&this.state, stateStopping)
 	this.Monitor.Stopping()
-	this.logger.Printf("[INFO] Health check [%s] entering [stopping] state. Waiting [%s] before concluding.", this.friendlyName, this.delay)
+	this.logger.Printf("[INFO] Health check  for resource [%s] entering [stopping] state. Waiting [%s] before concluding.", this.resourceName, this.delay)
 
 	ctx, _ := context.WithTimeout(this.hardContext, this.delay)
 	<-ctx.Done()
