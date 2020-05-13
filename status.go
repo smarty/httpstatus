@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-type defaultHandler struct {
+type defaultStatus struct {
 	Monitor
 	startingText string
 	healthyText  string
@@ -28,7 +28,7 @@ type defaultHandler struct {
 func newHandler(config configuration) Handler {
 	softContext, softShutdown := context.WithCancel(config.ctx)
 
-	return &defaultHandler{
+	return &defaultStatus{
 		Monitor:      config.monitor,
 		startingText: fmt.Sprintf("%s:%s", config.name, config.startingState),
 		healthyText:  fmt.Sprintf("%s:%s", config.name, config.healthyState),
@@ -45,7 +45,7 @@ func newHandler(config configuration) Handler {
 	}
 }
 
-func (this *defaultHandler) ServeHTTP(response http.ResponseWriter, _ *http.Request) {
+func (this *defaultStatus) ServeHTTP(response http.ResponseWriter, _ *http.Request) {
 	switch atomic.LoadUint32(&this.state) {
 	case stateStarting:
 		http.Error(response, this.startingText, http.StatusServiceUnavailable)
@@ -57,7 +57,7 @@ func (this *defaultHandler) ServeHTTP(response http.ResponseWriter, _ *http.Requ
 		http.Error(response, this.healthyText, http.StatusOK)
 	}
 }
-func (this *defaultHandler) Listen() {
+func (this *defaultStatus) Listen() {
 	defer this.Stopping()
 
 	for {
@@ -75,7 +75,7 @@ func (this *defaultHandler) Listen() {
 	}
 }
 
-func (this *defaultHandler) Healthy() {
+func (this *defaultStatus) Healthy() {
 	if atomic.SwapUint32(&this.state, stateHealthy) == stateHealthy {
 		return // state hasn't changed, previously healthy
 	}
@@ -83,7 +83,7 @@ func (this *defaultHandler) Healthy() {
 	this.Monitor.Healthy()
 	this.logger.Printf("[INFO] Health check passed.")
 }
-func (this *defaultHandler) Failing(err error) {
+func (this *defaultStatus) Failing(err error) {
 	if atomic.SwapUint32(&this.state, stateFailing) == stateFailing {
 		return // state hasn't changed, previously failing
 	}
@@ -91,7 +91,7 @@ func (this *defaultHandler) Failing(err error) {
 	this.Monitor.Failing(err)
 	this.logger.Printf("[WARN] Health check failing: [%s].", err)
 }
-func (this *defaultHandler) Stopping() {
+func (this *defaultStatus) Stopping() {
 	atomic.StoreUint32(&this.state, stateStopping)
 	this.Monitor.Stopping()
 	this.logger.Printf("[INFO] Entering [stopping] state. Waiting [%s] before concluding.", this.delay)
@@ -100,7 +100,7 @@ func (this *defaultHandler) Stopping() {
 	<-ctx.Done()
 }
 
-func (this *defaultHandler) Close() error {
+func (this *defaultStatus) Close() error {
 	this.shutdown()
 	return nil
 }

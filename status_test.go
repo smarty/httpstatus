@@ -11,11 +11,11 @@ import (
 	"github.com/smartystreets/gunit"
 )
 
-func TestHandlerFixture(t *testing.T) {
-	gunit.Run(new(HandlerFixture), t)
+func TestStatusFixture(t *testing.T) {
+	gunit.Run(new(StatusFixture), t)
 }
 
-type HandlerFixture struct {
+type StatusFixture struct {
 	*gunit.Fixture
 
 	ctx      context.Context
@@ -37,14 +37,14 @@ type HandlerFixture struct {
 	shutdownDelay        time.Duration
 }
 
-func (this *HandlerFixture) Setup() {
+func (this *StatusFixture) Setup() {
 	this.ctx, this.shutdown = context.WithCancel(context.Background())
 	this.healthCheckTimeout = time.Second
 	this.healthCheckFrequency = time.Millisecond
 	this.shutdownDelay = time.Millisecond
 	this.initialize()
 }
-func (this *HandlerFixture) initialize() {
+func (this *StatusFixture) initialize() {
 	this.handler = New(
 		Options.HealthCheckFunc(this.Status),
 		Options.Monitor(this),
@@ -55,15 +55,15 @@ func (this *HandlerFixture) initialize() {
 	)
 }
 
-func (this *HandlerFixture) TestHTTPResponseShouldBeWrittenCorrectly() {
+func (this *StatusFixture) TestHTTPResponseShouldBeWrittenCorrectly() {
 	this.assertHTTP(stateStarting, 503, "status:Starting")
 	this.assertHTTP(stateHealthy, 200, "status:OK")
 	this.assertHTTP(stateFailing, 503, "status:Failing")
 	this.assertHTTP(stateStopping, 503, "status:Stopping")
 }
-func (this *HandlerFixture) assertHTTP(state uint32, statusCode int, responseText string) {
+func (this *StatusFixture) assertHTTP(state uint32, statusCode int, responseText string) {
 	response := httptest.NewRecorder()
-	this.handler.(*defaultHandler).state = state
+	this.handler.(*defaultStatus).state = state
 
 	this.handler.ServeHTTP(response, nil)
 
@@ -71,7 +71,7 @@ func (this *HandlerFixture) assertHTTP(state uint32, statusCode int, responseTex
 	this.So(response.Body.String(), should.Equal, responseText+"\n")
 }
 
-func (this *HandlerFixture) TestWhenStatusHealthy_MarkAsHealthy() {
+func (this *StatusFixture) TestWhenStatusHealthy_MarkAsHealthy() {
 	go func() { _ = this.handler.Close() }()
 
 	this.handler.Listen()
@@ -79,7 +79,7 @@ func (this *HandlerFixture) TestWhenStatusHealthy_MarkAsHealthy() {
 	this.So(this.healthyCount, should.BeGreaterThan, 0)
 	this.So(this.failingCount, should.Equal, 0)
 }
-func (this *HandlerFixture) TestWhenContextIsCancelled_ListenExists() {
+func (this *StatusFixture) TestWhenContextIsCancelled_ListenExists() {
 	this.shutdown()
 
 	this.handler.Listen()
@@ -90,7 +90,7 @@ func (this *HandlerFixture) TestWhenContextIsCancelled_ListenExists() {
 	this.So(this.failingCount, should.Equal, 0)
 	this.So(this.stoppingCount, should.Equal, 1)
 }
-func (this *HandlerFixture) TestWhenStatusFailing_MarkAsFailing() {
+func (this *StatusFixture) TestWhenStatusFailing_MarkAsFailing() {
 	this.statusError = errors.New("")
 	this.shutdownContextOnStatusCheck = 2
 
@@ -99,7 +99,7 @@ func (this *HandlerFixture) TestWhenStatusFailing_MarkAsFailing() {
 	this.So(this.failingCount, should.Equal, 1)
 	this.So(this.failingError, should.Equal, this.statusError)
 }
-func (this *HandlerFixture) TestWhenStatusCheckContextTimesOut_MarkAsFailing() {
+func (this *StatusFixture) TestWhenStatusCheckContextTimesOut_MarkAsFailing() {
 	this.healthCheckTimeout = time.Nanosecond
 	this.shutdownContextOnStatusCheck = 1
 	this.initialize()
@@ -110,7 +110,7 @@ func (this *HandlerFixture) TestWhenStatusCheckContextTimesOut_MarkAsFailing() {
 	this.So(this.failingCount, should.Equal, 1)
 	this.So(this.failingError, should.Resemble, context.DeadlineExceeded)
 }
-func (this *HandlerFixture) TestSleepBetweenHealthChecks() {
+func (this *StatusFixture) TestSleepBetweenHealthChecks() {
 	this.healthCheckFrequency = time.Millisecond * 10
 	this.shutdownContextOnStatusCheck = 1
 	this.initialize()
@@ -121,7 +121,7 @@ func (this *HandlerFixture) TestSleepBetweenHealthChecks() {
 	this.So(time.Since(started), should.BeGreaterThan, this.healthCheckFrequency)
 }
 
-func (this *HandlerFixture) TestWhenConsecutiveChecksAreHealthy_OnlyUpdateMonitorOnce() {
+func (this *StatusFixture) TestWhenConsecutiveChecksAreHealthy_OnlyUpdateMonitorOnce() {
 	this.shutdownContextOnStatusCheck = 4
 
 	this.handler.Listen()
@@ -129,7 +129,7 @@ func (this *HandlerFixture) TestWhenConsecutiveChecksAreHealthy_OnlyUpdateMonito
 	this.So(this.healthyCount, should.Equal, 1)
 	this.So(this.failingCount, should.Equal, 0)
 }
-func (this *HandlerFixture) TestWhenConsecutiveChecksAreFailing_OnlyUpdateMonitorOnce() {
+func (this *StatusFixture) TestWhenConsecutiveChecksAreFailing_OnlyUpdateMonitorOnce() {
 	this.statusError = errors.New("")
 	this.shutdownContextOnStatusCheck = 4
 
@@ -139,7 +139,7 @@ func (this *HandlerFixture) TestWhenConsecutiveChecksAreFailing_OnlyUpdateMonito
 	this.So(this.healthyCount, should.Equal, 0)
 }
 
-func (this *HandlerFixture) TestWhenShuttingDown_DelayShouldBeUsed() {
+func (this *StatusFixture) TestWhenShuttingDown_DelayShouldBeUsed() {
 	this.shutdownDelay = time.Millisecond * 10
 	this.initialize()
 
@@ -150,7 +150,7 @@ func (this *HandlerFixture) TestWhenShuttingDown_DelayShouldBeUsed() {
 
 	this.So(time.Since(started), should.BeGreaterThan, this.shutdownDelay)
 }
-func (this *HandlerFixture) TestWhenShuttingDownHard_DelayShouldBeIgnored() {
+func (this *StatusFixture) TestWhenShuttingDownHard_DelayShouldBeIgnored() {
 	this.shutdown()
 	this.shutdownDelay = time.Second
 
@@ -162,7 +162,7 @@ func (this *HandlerFixture) TestWhenShuttingDownHard_DelayShouldBeIgnored() {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func (this *HandlerFixture) Status(ctx context.Context) error {
+func (this *StatusFixture) Status(ctx context.Context) error {
 	this.statusCount++
 	this.statusContext = ctx
 
@@ -178,13 +178,13 @@ func (this *HandlerFixture) Status(ctx context.Context) error {
 	}
 }
 
-func (this *HandlerFixture) Healthy() {
+func (this *StatusFixture) Healthy() {
 	this.healthyCount++
 }
-func (this *HandlerFixture) Failing(err error) {
+func (this *StatusFixture) Failing(err error) {
 	this.failingCount++
 	this.failingError = err
 }
-func (this *HandlerFixture) Stopping() {
+func (this *StatusFixture) Stopping() {
 	this.stoppingCount++
 }
