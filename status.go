@@ -102,9 +102,13 @@ func (this *defaultStatus) Failing(err error) {
 	this.logger.Printf("[WARN] Health check for resource [%s] failing: [%s].", this.resourceName, err)
 }
 func (this *defaultStatus) Stopping() {
-	atomic.StoreUint32(&this.state, stateStopping)
+	previousState := atomic.SwapUint32(&this.state, stateStopping)
 	this.Monitor.Stopping()
 	this.logger.Printf("[INFO] Health check for resource [%s] entering [stopping] state. Waiting [%s] before concluding.", this.resourceName, this.delay)
+
+	if previousState != stateHealthy {
+		return // already unhealthy, avoid shutdown delay
+	}
 
 	ctx, _ := context.WithTimeout(this.hardContext, this.delay)
 	<-ctx.Done()

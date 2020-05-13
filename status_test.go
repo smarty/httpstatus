@@ -145,7 +145,10 @@ func (this *StatusFixture) TestWhenShuttingDown_DelayShouldBeUsed() {
 	this.shutdownDelay = time.Millisecond * 10
 	this.initialize()
 
-	_ = this.handler.Close()
+	go func() {
+		time.Sleep(time.Millisecond)
+		_ = this.handler.Close()
+	}()
 
 	started := time.Now().UTC()
 	this.handler.Listen()
@@ -160,6 +163,18 @@ func (this *StatusFixture) TestWhenShuttingDownHard_DelayShouldBeIgnored() {
 	this.handler.Listen()
 
 	this.So(time.Since(started), should.BeLessThan, this.shutdownDelay)
+}
+func (this *StatusFixture) TestWhenShuttingDownWhileNotHealthy_DelayShouldBeIgnored() {
+	this.shutdownDelay = time.Second
+	this.statusError = errors.New("")
+	this.initialize()
+
+	_ = this.handler.Close()
+
+	started := time.Now().UTC()
+	this.handler.Listen()
+
+	this.So(time.Since(started), should.BeLessThan, time.Millisecond)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
