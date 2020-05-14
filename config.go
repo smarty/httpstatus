@@ -18,8 +18,8 @@ type configuration struct {
 	healthCheckTimeout   time.Duration
 	shutdownDelay        time.Duration
 	ctx                  context.Context
-	monitor              Monitor
-	logger               Logger
+	monitor              monitor
+	logger               logger
 }
 
 func New(options ...option) Handler {
@@ -51,7 +51,7 @@ func (singleton) FailingStateValue(value string) option {
 func (singleton) StoppingStateValue(value string) option {
 	return func(this *configuration) { this.stoppingState = value }
 }
-func (singleton) HealthCheckFunc(value HealthCheckFunc) option {
+func (singleton) HealthCheckFunc(value healthCheckFunc) option {
 	return Options.HealthCheck(defaultHealthCheck{check: value})
 }
 func (singleton) SQLHealthCheck(value *sql.DB) option {
@@ -72,10 +72,10 @@ func (singleton) ShutdownDelay(value time.Duration) option {
 func (singleton) Context(value context.Context) option {
 	return func(this *configuration) { this.ctx = value }
 }
-func (singleton) Logger(value Logger) option {
+func (singleton) Logger(value logger) option {
 	return func(this *configuration) { this.logger = value }
 }
-func (singleton) Monitor(value Monitor) option {
+func (singleton) Monitor(value monitor) option {
 	return func(this *configuration) { this.monitor = value }
 }
 
@@ -134,7 +134,7 @@ func (nop) Stopping()       {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type defaultHealthCheck struct{ check HealthCheckFunc }
+type defaultHealthCheck struct{ check healthCheckFunc }
 
 func (this defaultHealthCheck) Status(ctx context.Context) error { return this.check(ctx) }
 

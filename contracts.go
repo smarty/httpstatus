@@ -13,16 +13,16 @@ type Handler interface {
 	io.Closer
 }
 
-type HealthCheckFunc func(ctx context.Context) error
 type HealthCheck interface {
 	Status(ctx context.Context) error
 }
+type healthCheckFunc func(ctx context.Context) error
 
-type Monitor interface {
+type monitor interface {
 	Healthy()
 	Failing(error)
 	Stopping()
 }
-type Logger interface {
+type logger interface {
 	Printf(format string, args ...interface{})
 }

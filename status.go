@@ -9,7 +9,7 @@ import (
 )
 
 type defaultStatus struct {
-	Monitor
+	monitor
 	resourceName string
 	startingText string
 	healthyText  string
@@ -23,14 +23,14 @@ type defaultStatus struct {
 	timeout      time.Duration
 	frequency    time.Duration
 	delay        time.Duration
-	logger       Logger
+	logger       logger
 }
 
 func newHandler(config configuration) Handler {
 	softContext, softShutdown := context.WithCancel(config.ctx)
 
 	return &defaultStatus{
-		Monitor:      config.monitor,
+		monitor:      config.monitor,
 		resourceName: config.resourceName,
 		startingText: fmt.Sprintf("%s:%s", config.displayName, config.startingState),
 		healthyText:  fmt.Sprintf("%s:%s", config.displayName, config.healthyState),
@@ -90,7 +90,7 @@ func (this *defaultStatus) Healthy() {
 		return // state hasn't changed, previously healthy
 	}
 
-	this.Monitor.Healthy()
+	this.monitor.Healthy()
 	this.logger.Printf("[INFO] Health check for resource [%s] passed.", this.resourceName)
 }
 func (this *defaultStatus) Failing(err error) {
@@ -98,12 +98,12 @@ func (this *defaultStatus) Failing(err error) {
 		return // state hasn't changed, previously failing
 	}
 
-	this.Monitor.Failing(err)
+	this.monitor.Failing(err)
 	this.logger.Printf("[WARN] Health check for resource [%s] failing: [%s].", this.resourceName, err)
 }
 func (this *defaultStatus) Stopping() {
 	previousState := atomic.SwapUint32(&this.state, stateStopping)
-	this.Monitor.Stopping()
+	this.monitor.Stopping()
 
 	if previousState != stateHealthy {
 		this.logger.Printf("[INFO] Health check for resource [%s] entering [stopping] state. Skipping [%s] shutdown delay because state is unhealthy.", this.resourceName, this.delay)
