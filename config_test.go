@@ -17,9 +17,6 @@ type ConfigFixture struct {
 	*gunit.Fixture
 }
 
-func (this *ConfigFixture) Setup() {
-}
-
 func (this *ConfigFixture) TestWhenSQLDBProvided_UseBuiltInHealthCheck() {
 	sqlHandle := &sql.DB{}
 
