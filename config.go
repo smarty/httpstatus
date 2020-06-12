@@ -2,7 +2,6 @@ package httpstatus
 
 import (
 	"context"
-	"database/sql"
 	"time"
 )
 
@@ -54,8 +53,8 @@ func (singleton) StoppingStateValue(value string) option {
 func (singleton) HealthCheckFunc(value healthCheckFunc) option {
 	return Options.HealthCheck(defaultHealthCheck{check: value})
 }
-func (singleton) SQLHealthCheck(value *sql.DB) option {
-	return Options.HealthCheck(sqlHealthCheck{DB: value})
+func (singleton) SQLHealthCheck(value PingContext) option {
+	return Options.HealthCheck(pingHealthCheck{pinger: value})
 }
 func (singleton) HealthCheck(value HealthCheck) option {
 	return func(this *configuration) { this.healthCheck = value }
@@ -138,6 +137,6 @@ type defaultHealthCheck struct{ check healthCheckFunc }
 
 func (this defaultHealthCheck) Status(ctx context.Context) error { return this.check(ctx) }
 
-type sqlHealthCheck struct{ *sql.DB }
+type pingHealthCheck struct{ pinger PingContext }
 
-func (this sqlHealthCheck) Status(ctx context.Context) error { return this.PingContext(ctx) }
+func (this pingHealthCheck) Status(ctx context.Context) error { return this.pinger.PingContext(ctx) }

@@ -26,3 +26,7 @@ type monitor interface {
 type logger interface {
 	Printf(format string, args ...interface{})
 }
+
+type PingContext interface {
+	PingContext(ctx context.Context) error
+}
