@@ -12,6 +12,7 @@ type configuration struct {
 	healthyState         string
 	failingState         string
 	stoppingState        string
+	version              string
 	healthCheck          HealthCheck
 	healthCheckFrequency time.Duration
 	healthCheckTimeout   time.Duration
@@ -77,6 +78,9 @@ func (singleton) Logger(value logger) option {
 func (singleton) Monitor(value monitor) option {
 	return func(this *configuration) { this.monitor = value }
 }
+func (singleton) VersionName(version string) option {
+	return func(this *configuration) { this.version = version }
+}
 
 func (singleton) apply(options ...option) option {
 	return func(this *configuration) {
@@ -94,6 +98,7 @@ func (singleton) defaults(options ...option) []option {
 	const defaultHealthCheckFrequency = time.Second
 	const defaultHealthCheckTimeout = time.Second * 10
 	const defaultShutdownDelay = 0
+	const defaultVersion = ""
 	var defaultContext = context.Background()
 	var defaultHealthCheck = nop{}
 	var defaultMonitor = nop{}
@@ -109,6 +114,7 @@ func (singleton) defaults(options ...option) []option {
 		Options.HealthCheckFrequency(defaultHealthCheckFrequency),
 		Options.HealthCheckTimeout(defaultHealthCheckTimeout),
 		Options.ShutdownDelay(defaultShutdownDelay),
+		Options.VersionName(defaultVersion),
 		Options.Context(defaultContext),
 		Options.HealthCheckFunc(defaultHealthCheck.Status),
 		Options.HealthCheck(defaultHealthCheck),

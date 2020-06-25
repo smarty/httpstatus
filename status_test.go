@@ -29,6 +29,7 @@ type StatusFixture struct {
 	statusCount   int
 	statusContext context.Context
 	statusError   error
+	versionName   string
 
 	shutdownContextOnStatusCheck int
 
@@ -52,14 +53,23 @@ func (this *StatusFixture) initialize() {
 		Options.HealthCheckTimeout(this.healthCheckTimeout),
 		Options.HealthCheckFrequency(this.healthCheckFrequency),
 		Options.ShutdownDelay(this.shutdownDelay),
+		Options.VersionName(this.versionName),
 	)
 }
 
-func (this *StatusFixture) TestHTTPResponseShouldBeWrittenCorrectly() {
+func (this *StatusFixture) TestHTTPResponseShouldBeWrittenCorrectly_VersionNotEnabled() {
 	this.assertHTTP(stateStarting, 503, "status:Starting")
 	this.assertHTTP(stateHealthy, 200, "status:OK")
 	this.assertHTTP(stateFailing, 503, "status:Failing")
 	this.assertHTTP(stateStopping, 503, "status:Stopping")
+}
+func (this *StatusFixture) TestHTTPResponseShouldBeWrittenCorrectly_VersionEnabled() {
+	this.versionName = "version"
+	this.initialize()
+	this.assertHTTP(stateStarting, 503, "status:Starting\nversion:version")
+	this.assertHTTP(stateHealthy, 200, "status:OK\nversion:version")
+	this.assertHTTP(stateFailing, 503, "status:Failing\nversion:version")
+	this.assertHTTP(stateStopping, 503, "status:Stopping\nversion:version")
 }
 func (this *StatusFixture) assertHTTP(state uint32, statusCode int, responseText string) {
 	response := httptest.NewRecorder()
@@ -82,7 +92,7 @@ func (this *StatusFixture) TestWhenStatusHealthy_MarkAsHealthy() {
 	this.So(this.healthyCount, should.BeGreaterThan, 0)
 	this.So(this.failingCount, should.Equal, 0)
 }
-func (this *StatusFixture) TestWhenContextIsCancelled_ListenExists() {
+func (this *StatusFixture) TestWhenContextIsCancelled_ListenExits() {
 	this.shutdown()
 
 	this.handler.Listen()

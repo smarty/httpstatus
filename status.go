@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync/atomic"
 	"time"
 )
@@ -32,10 +33,10 @@ func newHandler(config configuration) Handler {
 	return &defaultStatus{
 		monitor:      config.monitor,
 		resourceName: config.resourceName,
-		startingText: fmt.Sprintf("%s:%s", config.displayName, config.startingState),
-		healthyText:  fmt.Sprintf("%s:%s", config.displayName, config.healthyState),
-		failingText:  fmt.Sprintf("%s:%s", config.displayName, config.failingState),
-		stoppingText: fmt.Sprintf("%s:%s", config.displayName, config.stoppingState),
+		startingText: statusText(config, config.startingState),
+		healthyText:  statusText(config, config.healthyState),
+		failingText:  statusText(config, config.failingState),
+		stoppingText: statusText(config, config.stoppingState),
 		hardContext:  config.ctx,
 		softContext:  softContext,
 		shutdown:     softShutdown,
@@ -45,6 +46,11 @@ func newHandler(config configuration) Handler {
 		delay:        config.shutdownDelay,
 		logger:       config.logger,
 	}
+}
+
+func statusText(config configuration, state string) string {
+	result := fmt.Sprintf("%s:%s\nversion:%s", config.displayName, state, config.version)
+	return strings.TrimSpace(strings.TrimSuffix(result, "version:"))
 }
 
 func (this *defaultStatus) ServeHTTP(response http.ResponseWriter, _ *http.Request) {
