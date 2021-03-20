@@ -126,7 +126,8 @@ func (this *defaultStatus) Stopping() {
 	}
 
 	this.logger.Printf("[INFO] Health check for resource [%s] entering [stopping] state. Waiting [%s] before concluding.", this.resourceName, this.delay)
-	ctx, _ := context.WithTimeout(this.hardContext, this.delay)
+	ctx, cancel := context.WithTimeout(this.hardContext, this.delay)
+	defer cancel()
 	<-ctx.Done()
 }
 
