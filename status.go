@@ -68,19 +68,28 @@ func (this *defaultStatus) ServeHTTP(response http.ResponseWriter, _ *http.Reque
 func (this *defaultStatus) Listen() {
 	defer this.Stopping()
 
-	for this.isAlive() {
-		ctx, _ := context.WithTimeout(this.softContext, this.timeout)
-		if err := this.healthCheck.Status(ctx); err == nil {
-			this.Healthy()
-		} else if err == context.Canceled {
-			break
-		} else {
-			this.Failing(err)
-		}
-
-		ctx, _ = context.WithTimeout(this.softContext, this.frequency)
-		<-ctx.Done()
+	for this.isAlive() && this.checkHealth() {
 	}
+}
+func (this *defaultStatus) checkHealth() bool {
+	ctx, cancel := context.WithTimeout(this.softContext, this.timeout)
+	defer cancel()
+	if err := this.healthCheck.Status(ctx); err == nil {
+		this.Healthy()
+	} else if err == context.Canceled {
+		return false
+	} else {
+		this.Failing(err)
+	}
+
+	this.awaitNextCheck()
+	return true
+}
+
+func (this *defaultStatus) awaitNextCheck() {
+	ctx, cancel := context.WithTimeout(this.softContext, this.frequency)
+	defer cancel()
+	<-ctx.Done()
 }
 
 func (this *defaultStatus) isAlive() bool {
