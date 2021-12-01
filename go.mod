@@ -1,8 +1,8 @@
 module github.com/smartystreets/httpstatus
 
-go 1.14
+go 1.17
 
 require (
-	github.com/smartystreets/assertions v1.2.0
-	github.com/smartystreets/gunit v1.4.2
+	github.com/smartystreets/assertions v1.2.1
+	github.com/smartystreets/gunit v1.4.3
 )
