@@ -1,6 +1,7 @@
 package httpstatus
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,23 +16,30 @@ type stateHandler struct {
 }
 
 func newStateHandler(statusCode int, resource, state, version string) http.Handler {
-	message := fmt.Sprintf("%s:%s", resource, state)
+	compatibleMessage := fmt.Sprintf("%s:%s", resource, state)
 
-	plaintext := fmt.Sprintf("%s\nversion:%s", message, version)
+	plaintext := fmt.Sprintf("%s\nversion:%s", compatibleMessage, version)
 	plaintext = strings.TrimSuffix(plaintext, "version:")
 	plaintext = strings.TrimSpace(plaintext)
 
-	rawJSON, _ := json.Marshal(struct {
-		State   string `json:"state,omitempty"`
-		Version string `json:"version,omitempty"`
+	buffer := bytes.NewBuffer(nil)
+	encoder := json.NewEncoder(buffer)
+	encoder.SetIndent("", "  ")
+	_ = encoder.Encode(struct {
+		Compatibility string `json:"compatibility,omitempty"`
+		Resource      string `json:"resource,omitempty"`
+		State         string `json:"state,omitempty"`
+		Version       string `json:"version,omitempty"`
 	}{
-		State:   message,
-		Version: version,
+		Compatibility: compatibleMessage,
+		Resource:      resource,
+		State:         state,
+		Version:       version,
 	})
 
 	return &stateHandler{
 		statusCode: statusCode,
-		json:       rawJSON,
+		json:       buffer.Bytes(),
 		plaintext:  []byte(plaintext),
 		value:      plaintext,
 	}
