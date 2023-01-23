@@ -2,68 +2,55 @@ package httpstatus
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"strings"
 	"sync/atomic"
 	"time"
 )
 
 type defaultStatus struct {
 	monitor
-	resourceName string
-	startingText string
-	healthyText  string
-	failingText  string
-	stoppingText string
-	state        uint32
-	hardContext  context.Context
-	softContext  context.Context
-	shutdown     context.CancelFunc
-	healthCheck  HealthCheck
-	timeout      time.Duration
-	frequency    time.Duration
-	delay        time.Duration
-	logger       logger
+	resourceName  string
+	state         uint32
+	stateHandlers map[uint32]http.Handler
+	hardContext   context.Context
+	softContext   context.Context
+	shutdown      context.CancelFunc
+	healthCheck   HealthCheck
+	timeout       time.Duration
+	frequency     time.Duration
+	delay         time.Duration
+	logger        logger
 }
 
 func newHandler(config configuration) Handler {
 	softContext, softShutdown := context.WithCancel(config.ctx)
 
+	stateHandlers := map[uint32]http.Handler{
+		stateStarting: newStateHandler(http.StatusServiceUnavailable, config.resourceName, config.startingState, config.version),
+		stateStopping: newStateHandler(http.StatusServiceUnavailable, config.resourceName, config.stoppingState, config.version),
+		stateFailing:  newStateHandler(http.StatusServiceUnavailable, config.resourceName, config.failingState, config.version),
+		stateHealthy:  newStateHandler(http.StatusOK, config.resourceName, config.healthyState, config.version),
+	}
+
 	return &defaultStatus{
-		monitor:      config.monitor,
-		resourceName: config.resourceName,
-		startingText: statusText(config, config.startingState),
-		healthyText:  statusText(config, config.healthyState),
-		failingText:  statusText(config, config.failingState),
-		stoppingText: statusText(config, config.stoppingState),
-		hardContext:  config.ctx,
-		softContext:  softContext,
-		shutdown:     softShutdown,
-		healthCheck:  config.healthCheck,
-		timeout:      config.healthCheckTimeout,
-		frequency:    config.healthCheckFrequency,
-		delay:        config.shutdownDelay,
-		logger:       config.logger,
+		monitor:       config.monitor,
+		resourceName:  config.resourceName,
+		stateHandlers: stateHandlers,
+		hardContext:   config.ctx,
+		softContext:   softContext,
+		shutdown:      softShutdown,
+		healthCheck:   config.healthCheck,
+		timeout:       config.healthCheckTimeout,
+		frequency:     config.healthCheckFrequency,
+		delay:         config.shutdownDelay,
+		logger:        config.logger,
 	}
 }
 
-func statusText(config configuration, state string) string {
-	result := fmt.Sprintf("%s:%s\nversion:%s", config.displayName, state, config.version)
-	return strings.TrimSpace(strings.TrimSuffix(result, "version:"))
-}
-
-func (this *defaultStatus) ServeHTTP(response http.ResponseWriter, _ *http.Request) {
-	switch atomic.LoadUint32(&this.state) {
-	case stateStarting:
-		http.Error(response, this.startingText, http.StatusServiceUnavailable)
-	case stateFailing:
-		http.Error(response, this.failingText, http.StatusServiceUnavailable)
-	case stateStopping:
-		http.Error(response, this.stoppingText, http.StatusServiceUnavailable)
-	default:
-		http.Error(response, this.healthyText, http.StatusOK)
-	}
+func (this *defaultStatus) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+	state := atomic.LoadUint32(&this.state)
+	handler := this.stateHandlers[state]
+	handler.ServeHTTP(response, request)
 }
 func (this *defaultStatus) Listen() {
 	defer this.Stopping()

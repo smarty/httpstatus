@@ -52,7 +52,7 @@ func (singleton) StoppingStateValue(value string) option {
 	return func(this *configuration) { this.stoppingState = value }
 }
 func (singleton) HealthCheckFunc(value healthCheckFunc) option {
-	return Options.HealthCheck(defaultHealthCheck{check: value})
+	return Options.HealthCheck(simpleHealthCheck{check: value})
 }
 func (singleton) SQLHealthCheck(value PingContext) option {
 	return Options.HealthCheck(pingHealthCheck{pinger: value})
@@ -139,9 +139,9 @@ func (nop) Stopping()       {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type defaultHealthCheck struct{ check healthCheckFunc }
+type simpleHealthCheck struct{ check healthCheckFunc }
 
-func (this defaultHealthCheck) Status(ctx context.Context) error { return this.check(ctx) }
+func (this simpleHealthCheck) Status(ctx context.Context) error { return this.check(ctx) }
 
 type pingHealthCheck struct{ pinger PingContext }
 

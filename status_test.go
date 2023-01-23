@@ -3,6 +3,7 @@ package httpstatus
 import (
 	"context"
 	"errors"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -75,10 +76,12 @@ func (this *StatusFixture) assertHTTP(state uint32, statusCode int, responseText
 	response := httptest.NewRecorder()
 	this.handler.(*defaultStatus).state = state
 
-	this.handler.ServeHTTP(response, nil)
+	request, _ := http.NewRequest("GET", "/", nil)
+	request.Header["Accept"] = []string{"text/plain"}
+	this.handler.ServeHTTP(response, request)
 
 	this.So(response.Code, should.Equal, statusCode)
-	this.So(response.Body.String(), should.Equal, responseText+"\n")
+	this.So(response.Body.String(), should.Equal, responseText)
 }
 
 func (this *StatusFixture) TestWhenStatusHealthy_MarkAsHealthy() {
