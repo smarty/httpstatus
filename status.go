@@ -26,10 +26,10 @@ func newHandler(config configuration) Handler {
 	softContext, softShutdown := context.WithCancel(config.ctx)
 
 	var stateHandlers [4]http.Handler
-	stateHandlers[stateStarting] = newStateHandler(http.StatusServiceUnavailable, config.resourceName, config.startingState, config.version)
-	stateHandlers[stateStopping] = newStateHandler(http.StatusServiceUnavailable, config.resourceName, config.stoppingState, config.version)
-	stateHandlers[stateFailing] = newStateHandler(http.StatusServiceUnavailable, config.resourceName, config.failingState, config.version)
-	stateHandlers[stateHealthy] = newStateHandler(http.StatusOK, config.resourceName, config.healthyState, config.version)
+	stateHandlers[stateStarting] = newStateHandler(http.StatusServiceUnavailable, config.displayName, config.resourceName, config.startingState, config.version)
+	stateHandlers[stateStopping] = newStateHandler(http.StatusServiceUnavailable, config.displayName, config.resourceName, config.stoppingState, config.version)
+	stateHandlers[stateFailing] = newStateHandler(http.StatusServiceUnavailable, config.displayName, config.resourceName, config.failingState, config.version)
+	stateHandlers[stateHealthy] = newStateHandler(http.StatusOK, config.displayName, config.resourceName, config.healthyState, config.version)
 
 	return &defaultStatus{
 		monitor:       config.monitor,

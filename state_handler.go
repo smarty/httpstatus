@@ -15,8 +15,8 @@ type stateHandler struct {
 	value      string
 }
 
-func newStateHandler(statusCode int, resource, state, version string) http.Handler {
-	compatibleMessage := fmt.Sprintf("%s:%s", resource, state)
+func newStateHandler(statusCode int, application, resource, state, version string) http.Handler {
+	compatibleMessage := fmt.Sprintf("%s:%s", application, state)
 
 	plaintext := fmt.Sprintf("%s\nversion:%s", compatibleMessage, version)
 	plaintext = strings.TrimSuffix(plaintext, "version:")
@@ -27,11 +27,13 @@ func newStateHandler(statusCode int, resource, state, version string) http.Handl
 	encoder.SetIndent("", "  ")
 	_ = encoder.Encode(struct {
 		Compatibility string `json:"compatibility,omitempty"`
+		Application   string `json:"application,omitempty"`
 		Resource      string `json:"resource,omitempty"`
 		State         string `json:"state,omitempty"`
 		Version       string `json:"version,omitempty"`
 	}{
 		Compatibility: compatibleMessage,
+		Application:   application,
 		Resource:      resource,
 		State:         state,
 		Version:       version,
