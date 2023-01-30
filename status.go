@@ -2,6 +2,7 @@ package httpstatus
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"sync/atomic"
 	"time"
@@ -62,7 +63,7 @@ func (this *defaultStatus) checkHealth() bool {
 	defer cancel()
 	if err := this.healthCheck.Status(ctx); err == nil {
 		this.Healthy()
-	} else if err == context.Canceled {
+	} else if errors.Is(err, context.Canceled) {
 		return false
 	} else {
 		this.Failing(err)
