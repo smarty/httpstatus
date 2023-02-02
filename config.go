@@ -78,14 +78,14 @@ func (singleton) Logger(value logger) option {
 func (singleton) Monitor(value monitor) option {
 	return func(this *configuration) { this.monitor = value }
 }
-func (singleton) VersionName(version string) option {
-	return func(this *configuration) { this.version = version }
+func (singleton) VersionName(value string) option {
+	return func(this *configuration) { this.version = value }
 }
 
 func (singleton) apply(options ...option) option {
 	return func(this *configuration) {
-		for _, option := range Options.defaults(options...) {
-			option(this)
+		for _, item := range Options.defaults(options...) {
+			item(this)
 		}
 	}
 }
