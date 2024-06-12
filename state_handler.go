@@ -25,13 +25,7 @@ func newStateHandler(statusCode int, application, resource, state, version strin
 	buffer := bytes.NewBuffer(nil)
 	encoder := json.NewEncoder(buffer)
 	encoder.SetIndent("", "  ")
-	_ = encoder.Encode(struct {
-		Compatibility string `json:"compatibility,omitempty"`
-		Application   string `json:"application,omitempty"`
-		Resource      string `json:"resource,omitempty"`
-		State         string `json:"state,omitempty"`
-		Version       string `json:"version,omitempty"`
-	}{
+	_ = encoder.Encode(jsonResponse{
 		Compatibility: compatibleMessage,
 		Application:   application,
 		Resource:      resource,
@@ -74,7 +68,15 @@ func canWriteJSON(acceptHeaders []string) bool {
 	return false
 }
 
+type jsonResponse struct {
+	Compatibility string `json:"compatibility,omitempty"`
+	Application   string `json:"application,omitempty"`
+	Resource      string `json:"resource,omitempty"`
+	State         string `json:"state,omitempty"`
+	Version       string `json:"version,omitempty"`
+}
+
 var (
-	contentTypeJSON      = []string{"pplication/json; charset=utf-8"}
+	contentTypeJSON      = []string{"application/json; charset=utf-8"}
 	contentTypePlaintext = []string{"text/plain"}
 )
