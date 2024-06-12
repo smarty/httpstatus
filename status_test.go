@@ -3,7 +3,6 @@ package httpstatus
 import (
 	"context"
 	"errors"
-	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -73,14 +72,15 @@ func (this *StatusFixture) TestHTTPResponseShouldBeWrittenCorrectly_VersionEnabl
 	this.assertHTTP(stateStopping, 503, "status:Stopping\nversion:version")
 }
 func (this *StatusFixture) assertHTTP(state uint32, statusCode int, responseText string) {
-	response := httptest.NewRecorder()
 	this.handler.(*defaultStatus).state = state
-
-	request, _ := http.NewRequest("GET", "/", nil)
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest("GET", "/", nil)
 	request.Header["Accept"] = []string{"text/plain"}
+
 	this.handler.ServeHTTP(response, request)
 
 	this.So(response.Code, should.Equal, statusCode)
+	this.So(response.Header().Get("Content-Type"), should.Equal, "text/plain")
 	this.So(response.Body.String(), should.Equal, responseText)
 }
 

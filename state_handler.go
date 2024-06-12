@@ -49,8 +49,8 @@ func newStateHandler(statusCode int, application, resource, state, version strin
 
 func (this *stateHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	headers, body := this.resolveContent(request.Header["Accept"])
+	response.Header()["Content-Type"] = headers
 	response.WriteHeader(this.statusCode)
-	response.Header()["Accept"] = headers
 	_, _ = response.Write(body)
 }
 func (this *stateHandler) resolveContent(acceptHeaders []string) ([]string, []byte) {
