@@ -2,6 +2,7 @@ package httpstatus
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http/httptest"
 	"testing"
@@ -47,6 +48,8 @@ func (this *StatusFixture) Setup() {
 }
 func (this *StatusFixture) initialize() {
 	this.handler = New(
+		Options.ResourceName("resource-name"),
+		Options.DisplayName("display-name"),
 		Options.HealthCheckFunc(this.Status),
 		Options.Monitor(this),
 		Options.Context(this.ctx),
@@ -57,31 +60,33 @@ func (this *StatusFixture) initialize() {
 	)
 }
 
-func (this *StatusFixture) TestHTTPResponseShouldBeWrittenCorrectly_VersionNotEnabled() {
-	this.assertHTTP(stateStarting, 503, "status:Starting")
-	this.assertHTTP(stateHealthy, 200, "status:OK")
-	this.assertHTTP(stateFailing, 503, "status:Failing")
-	this.assertHTTP(stateStopping, 503, "status:Stopping")
-}
 func (this *StatusFixture) TestHTTPResponseShouldBeWrittenCorrectly_VersionEnabled() {
 	this.versionName = "version"
 	this.initialize()
-	this.assertHTTP(stateStarting, 503, "status:Starting\nversion:version")
-	this.assertHTTP(stateHealthy, 200, "status:OK\nversion:version")
-	this.assertHTTP(stateFailing, 503, "status:Failing\nversion:version")
-	this.assertHTTP(stateStopping, 503, "status:Stopping\nversion:version")
+	this.assertHTTP(stateStarting, 503, "Starting")
+	this.assertHTTP(stateHealthy, 200, "OK")
+	this.assertHTTP(stateFailing, 503, "Failing")
+	this.assertHTTP(stateStopping, 503, "Stopping")
 }
-func (this *StatusFixture) assertHTTP(state uint32, statusCode int, responseText string) {
+func (this *StatusFixture) assertHTTP(state uint32, statusCode int, expectedStatus string) {
 	this.handler.(*defaultStatus).state = state
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest("GET", "/", nil)
-	request.Header["Accept"] = []string{"text/plain"}
 
 	this.handler.ServeHTTP(response, request)
 
 	this.So(response.Code, should.Equal, statusCode)
-	this.So(response.Header().Get("Content-Type"), should.Equal, "text/plain")
-	this.So(response.Body.String(), should.Equal, responseText)
+	this.So(response.Header().Get("Content-Type"), should.Equal, "application/json; charset=utf-8")
+	var actual jsonResponse
+	err := json.Unmarshal(response.Body.Bytes(), &actual)
+	this.So(err, should.BeNil)
+	this.So(actual, should.Equal, jsonResponse{
+		Compatibility: "display-name:" + expectedStatus,
+		Application:   "display-name",
+		Resource:      "resource-name",
+		State:         expectedStatus,
+		Version:       this.versionName,
+	})
 }
 
 func (this *StatusFixture) TestWhenStatusHealthy_MarkAsHealthy() {
