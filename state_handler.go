@@ -23,7 +23,7 @@ func newStateHandler(statusCode int, application, resource, state, version strin
 	return &stateHandler{statusCode: statusCode, body: body}
 }
 
-func (this *stateHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+func (this *stateHandler) ServeHTTP(response http.ResponseWriter, _ *http.Request) {
 	response.Header()["Content-Type"] = contentTypeJSON
 	response.WriteHeader(this.statusCode)
 	_, _ = response.Write(this.body)
