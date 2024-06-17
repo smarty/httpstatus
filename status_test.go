@@ -60,7 +60,7 @@ func (this *StatusFixture) initialize() {
 	)
 }
 
-func (this *StatusFixture) TestHTTPResponseShouldBeWrittenCorrectly_VersionEnabled() {
+func (this *StatusFixture) TestHTTPResponseShouldBeWrittenCorrectly() {
 	this.versionName = "version"
 	this.initialize()
 	this.assertHTTP(stateStarting, 503, "Starting")
