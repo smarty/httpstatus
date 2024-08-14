@@ -155,7 +155,7 @@ type compositeHealthCheck struct {
 	checks []HealthCheck
 }
 
-func NewCompositeHealthCheck(checks []HealthCheck) HealthCheck {
+func NewCompositeHealthCheck(checks ...HealthCheck) HealthCheck {
 	return &compositeHealthCheck{checks: checks}
 }
 
