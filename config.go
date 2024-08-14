@@ -55,7 +55,7 @@ func (singleton) HealthCheckFunc(value healthCheckFunc) option {
 	return Options.HealthCheck(simpleHealthCheck{check: value})
 }
 func (singleton) SQLHealthCheck(value PingContext) option {
-	return Options.HealthCheck(pingHealthCheck{pinger: value})
+	return Options.HealthCheck(pingHealthCheck{ping: value})
 }
 func (singleton) HealthCheck(value HealthCheck) option {
 	return func(this *configuration) { this.healthCheck = value }
@@ -141,8 +141,29 @@ func (nop) Stopping()       {}
 
 type simpleHealthCheck struct{ check healthCheckFunc }
 
+func NewSimpleHealthCheck(check healthCheckFunc) HealthCheck { return &simpleHealthCheck{check: check} }
+
 func (this simpleHealthCheck) Status(ctx context.Context) error { return this.check(ctx) }
 
-type pingHealthCheck struct{ pinger PingContext }
+type pingHealthCheck struct{ ping PingContext }
 
-func (this pingHealthCheck) Status(ctx context.Context) error { return this.pinger.PingContext(ctx) }
+func NewPingHealthCheck(ping PingContext) HealthCheck { return &pingHealthCheck{ping: ping} }
+
+func (this pingHealthCheck) Status(ctx context.Context) error { return this.ping.PingContext(ctx) }
+
+type compositeHealthCheck struct {
+	checks []HealthCheck
+}
+
+func NewCompositeHealthCheck(checks []HealthCheck) HealthCheck {
+	return &compositeHealthCheck{checks: checks}
+}
+
+func (this *compositeHealthCheck) Status(ctx context.Context) error {
+	for _, check := range this.checks {
+		if err := check.Status(ctx); err != nil {
+			return err
+		}
+	}
+	return nil
+}
