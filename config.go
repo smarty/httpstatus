@@ -151,19 +151,18 @@ func NewPingHealthCheck(ping PingContext) HealthCheck { return &pingHealthCheck{
 
 func (this pingHealthCheck) Status(ctx context.Context) error { return this.ping.PingContext(ctx) }
 
-type compositeHealthCheck struct {
-	checks []HealthCheck
-}
+type compositeHealthCheck []HealthCheck
 
 func NewCompositeHealthCheck(checks ...HealthCheck) HealthCheck {
-	return &compositeHealthCheck{checks: checks}
+	return compositeHealthCheck(checks)
 }
 
-func (this *compositeHealthCheck) Status(ctx context.Context) error {
-	for _, check := range this.checks {
-		if err := check.Status(ctx); err != nil {
+func (this compositeHealthCheck) Status(ctx context.Context) error {
+	for _, item := range this {
+		if err := item.Status(ctx); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
