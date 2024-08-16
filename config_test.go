@@ -17,8 +17,9 @@ func TestConfigFixture(t *testing.T) {
 
 type ConfigFixture struct {
 	*gunit.Fixture
-	count int
-	errs  map[int]error
+	count  int
+	errs   map[int]error
+	closed int
 }
 
 func (this *ConfigFixture) Setup() {
@@ -60,4 +61,14 @@ func (this *ConfigFixture) TestCompositeHealthCheck() {
 	err := composite.Status(ctx)
 	this.So(err, should.Equal, boink)
 	this.So(this.count, should.Equal, 2)
+}
+func (this *ConfigFixture) TestCompositeHealthCheck_AllChecksClosed() {
+	composite := NewCompositeHealthCheck(this, this, this)
+	tryClose(composite)
+	this.So(this.closed, should.Equal, 3)
+}
+
+func (this *ConfigFixture) Close() error {
+	this.closed++
+	return nil
 }

@@ -3,6 +3,7 @@ package httpstatus
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"sync/atomic"
 	"time"
@@ -119,8 +120,20 @@ func (this *defaultStatus) Stopping() {
 }
 
 func (this *defaultStatus) Close() error {
+	tryClose(this.healthCheck)
 	this.shutdown()
 	return nil
+}
+
+func tryClose(v any) {
+	if v == nil {
+		return
+	}
+	closer, ok := v.(io.Closer)
+	if !ok {
+		return
+	}
+	_ = closer.Close()
 }
 
 const (

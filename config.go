@@ -163,6 +163,11 @@ func (this compositeHealthCheck) Status(ctx context.Context) error {
 			return err
 		}
 	}
-
+	return nil
+}
+func (this compositeHealthCheck) Close() error {
+	for _, item := range this {
+		tryClose(item)
+	}
 	return nil
 }

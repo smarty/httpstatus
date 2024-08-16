@@ -37,6 +37,8 @@ type StatusFixture struct {
 	healthCheckTimeout   time.Duration
 	healthCheckFrequency time.Duration
 	shutdownDelay        time.Duration
+
+	closed int
 }
 
 func (this *StatusFixture) Setup() {
@@ -50,7 +52,7 @@ func (this *StatusFixture) initialize() {
 	this.handler = New(
 		Options.ResourceName("resource-name"),
 		Options.DisplayName("display-name"),
-		Options.HealthCheckFunc(this.Status),
+		Options.HealthCheck(this),
 		Options.Monitor(this),
 		Options.Context(this.ctx),
 		Options.HealthCheckTimeout(this.healthCheckTimeout),
@@ -194,6 +196,11 @@ func (this *StatusFixture) TestWhenShuttingDownWhileNotHealthy_DelayShouldBeIgno
 
 	this.So(time.Since(started), should.BeLessThan, time.Millisecond)
 }
+func (this *StatusFixture) TestWhenShuttingDown_HealthCheckClosed() {
+	this.initialize()
+	_ = this.handler.Close()
+	this.So(this.closed, should.Equal, 1)
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -222,4 +229,8 @@ func (this *StatusFixture) Failing(err error) {
 }
 func (this *StatusFixture) Stopping() {
 	this.stoppingCount++
+}
+func (this *StatusFixture) Close() error {
+	this.closed++
+	return nil
 }
