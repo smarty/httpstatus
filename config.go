@@ -52,10 +52,10 @@ func (singleton) StoppingStateValue(value string) option {
 	return func(this *configuration) { this.stoppingState = value }
 }
 func (singleton) HealthCheckFunc(value healthCheckFunc) option {
-	return Options.HealthCheck(simpleHealthCheck{check: value})
+	return Options.HealthCheck(NewSimpleHealthCheck(value))
 }
 func (singleton) SQLHealthCheck(value PingContext) option {
-	return Options.HealthCheck(pingHealthCheck{ping: value})
+	return Options.HealthCheck(NewPingHealthCheck(value))
 }
 func (singleton) HealthCheck(value HealthCheck) option {
 	return func(this *configuration) { this.healthCheck = value }
