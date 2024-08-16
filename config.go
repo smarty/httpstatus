@@ -60,6 +60,9 @@ func (singleton) SQLHealthCheck(value PingContext) option {
 func (singleton) HealthCheck(value HealthCheck) option {
 	return func(this *configuration) { this.healthCheck = value }
 }
+func (singleton) HealthChecks(all ...HealthCheck) option {
+	return Options.HealthCheck(NewCompositeHealthCheck(all...))
+}
 func (singleton) HealthCheckFrequency(value time.Duration) option {
 	return func(this *configuration) { this.healthCheckFrequency = value }
 }
