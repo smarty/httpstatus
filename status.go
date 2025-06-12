@@ -12,7 +12,7 @@ import (
 type defaultStatus struct {
 	monitor
 	resourceName  string
-	state         uint32
+	state         *atomic.Uint32
 	stateHandlers [4]http.Handler
 	hardContext   context.Context
 	softContext   context.Context
@@ -36,6 +36,7 @@ func newHandler(config configuration) Handler {
 	return &defaultStatus{
 		monitor:       config.monitor,
 		resourceName:  config.resourceName,
+		state:         new(atomic.Uint32),
 		stateHandlers: stateHandlers,
 		hardContext:   config.ctx,
 		softContext:   softContext,
@@ -49,9 +50,7 @@ func newHandler(config configuration) Handler {
 }
 
 func (this *defaultStatus) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-	state := atomic.LoadUint32(&this.state)
-	handler := this.stateHandlers[state]
-	handler.ServeHTTP(response, request)
+	this.stateHandlers[this.state.Load()].ServeHTTP(response, request)
 }
 func (this *defaultStatus) Listen() {
 	defer this.Stopping()
@@ -89,7 +88,7 @@ func (this *defaultStatus) isAlive() bool {
 	}
 }
 func (this *defaultStatus) Healthy() {
-	if atomic.SwapUint32(&this.state, stateHealthy) == stateHealthy {
+	if this.state.Swap(stateHealthy) == stateHealthy {
 		return // state hasn't changed, previously healthy
 	}
 
@@ -97,7 +96,7 @@ func (this *defaultStatus) Healthy() {
 	this.logger.Printf("[INFO] Health check for resource [%s] passed.", this.resourceName)
 }
 func (this *defaultStatus) Failing(err error) {
-	if atomic.SwapUint32(&this.state, stateFailing) == stateFailing {
+	if this.state.Swap(stateFailing) == stateFailing {
 		return // state hasn't changed, previously failing
 	}
 
@@ -105,7 +104,7 @@ func (this *defaultStatus) Failing(err error) {
 	this.logger.Printf("[WARN] Health check for resource [%s] failing: [%s].", this.resourceName, err)
 }
 func (this *defaultStatus) Stopping() {
-	previousState := atomic.SwapUint32(&this.state, stateStopping)
+	previousState := this.state.Swap(stateStopping)
 	this.monitor.Stopping()
 
 	if previousState != stateHealthy {

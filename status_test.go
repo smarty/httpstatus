@@ -71,7 +71,7 @@ func (this *StatusFixture) TestHTTPResponseShouldBeWrittenCorrectly() {
 	this.assertHTTP(stateStopping, 503, "Stopping")
 }
 func (this *StatusFixture) assertHTTP(state uint32, statusCode int, expectedStatus string) {
-	this.handler.(*defaultStatus).state = state
+	this.handler.(*defaultStatus).state.Store(state)
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest("GET", "/", nil)
 
