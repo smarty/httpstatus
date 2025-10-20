@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/smarty/assertions/should"
 	"github.com/smarty/gunit"
+	"github.com/smarty/gunit/assert/should"
 )
 
 func TestStatusFixture(t *testing.T) {
@@ -130,7 +130,7 @@ func (this *StatusFixture) TestWhenStatusCheckContextTimesOut_MarkAsFailing() {
 
 	this.So(this.statusCount, should.Equal, 2)
 	this.So(this.failingCount, should.Equal, 1)
-	this.So(this.failingError, should.Resemble, context.DeadlineExceeded)
+	this.So(this.failingError, should.Equal, context.DeadlineExceeded)
 }
 func (this *StatusFixture) TestSleepBetweenHealthChecks() {
 	this.healthCheckFrequency = time.Millisecond * 10
