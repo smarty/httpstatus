@@ -22,7 +22,7 @@ type configuration struct {
 	logger               logger
 }
 
-func New(options ...option) Handler {
+func New(options ...Option) Handler {
 	var config configuration
 	Options.apply(options...)(&config)
 	return newHandler(config)
@@ -31,68 +31,68 @@ func New(options ...option) Handler {
 var Options singleton
 
 type singleton struct{}
-type option func(*configuration)
+type Option func(*configuration)
 
-func (singleton) DisplayName(value string) option {
+func (singleton) DisplayName(value string) Option {
 	return func(this *configuration) { this.displayName = value }
 }
-func (singleton) ResourceName(value string) option {
+func (singleton) ResourceName(value string) Option {
 	return func(this *configuration) { this.resourceName = value }
 }
-func (singleton) StartingStateValue(value string) option {
+func (singleton) StartingStateValue(value string) Option {
 	return func(this *configuration) { this.startingState = value }
 }
-func (singleton) HealthyStateValue(value string) option {
+func (singleton) HealthyStateValue(value string) Option {
 	return func(this *configuration) { this.healthyState = value }
 }
-func (singleton) FailingStateValue(value string) option {
+func (singleton) FailingStateValue(value string) Option {
 	return func(this *configuration) { this.failingState = value }
 }
-func (singleton) StoppingStateValue(value string) option {
+func (singleton) StoppingStateValue(value string) Option {
 	return func(this *configuration) { this.stoppingState = value }
 }
-func (singleton) HealthCheckFunc(value healthCheckFunc) option {
+func (singleton) HealthCheckFunc(value healthCheckFunc) Option {
 	return Options.HealthCheck(NewSimpleHealthCheck(value))
 }
-func (singleton) SQLHealthCheck(value PingContext) option {
+func (singleton) SQLHealthCheck(value PingContext) Option {
 	return Options.HealthCheck(NewPingHealthCheck(value))
 }
-func (singleton) HealthCheck(value HealthCheck) option {
+func (singleton) HealthCheck(value HealthCheck) Option {
 	return func(this *configuration) { this.healthCheck = value }
 }
-func (singleton) HealthChecks(all ...HealthCheck) option {
+func (singleton) HealthChecks(all ...HealthCheck) Option {
 	return Options.HealthCheck(NewCompositeHealthCheck(all...))
 }
-func (singleton) HealthCheckFrequency(value time.Duration) option {
+func (singleton) HealthCheckFrequency(value time.Duration) Option {
 	return func(this *configuration) { this.healthCheckFrequency = value }
 }
-func (singleton) HealthCheckTimeout(value time.Duration) option {
+func (singleton) HealthCheckTimeout(value time.Duration) Option {
 	return func(this *configuration) { this.healthCheckTimeout = value }
 }
-func (singleton) ShutdownDelay(value time.Duration) option {
+func (singleton) ShutdownDelay(value time.Duration) Option {
 	return func(this *configuration) { this.shutdownDelay = value }
 }
-func (singleton) Context(value context.Context) option {
+func (singleton) Context(value context.Context) Option {
 	return func(this *configuration) { this.ctx = value }
 }
-func (singleton) Logger(value logger) option {
+func (singleton) Logger(value logger) Option {
 	return func(this *configuration) { this.logger = value }
 }
-func (singleton) Monitor(value monitor) option {
+func (singleton) Monitor(value monitor) Option {
 	return func(this *configuration) { this.monitor = value }
 }
-func (singleton) VersionName(value string) option {
+func (singleton) VersionName(value string) Option {
 	return func(this *configuration) { this.version = value }
 }
 
-func (singleton) apply(options ...option) option {
+func (singleton) apply(options ...Option) Option {
 	return func(this *configuration) {
 		for _, item := range Options.defaults(options...) {
 			item(this)
 		}
 	}
 }
-func (singleton) defaults(options ...option) []option {
+func (singleton) defaults(options ...Option) []Option {
 	const defaultName = "status"
 	const defaultStartingState = "Starting"
 	const defaultHealthyState = "OK"
@@ -107,7 +107,7 @@ func (singleton) defaults(options ...option) []option {
 	var defaultMonitor = nop{}
 	var defaultLogger = nop{}
 
-	return append([]option{
+	return append([]Option{
 		Options.DisplayName(defaultName),
 		Options.ResourceName(defaultName),
 		Options.StartingStateValue(defaultStartingState),
